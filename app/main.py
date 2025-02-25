@@ -10,14 +10,22 @@ from .models import Base, User
 from . import database
 from typing import Optional
 import re
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+load_dotenv()
 
 # Initialize FastAPI app
 app = FastAPI()
 
+# Get allowed origins from environment variable
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -135,6 +143,13 @@ async def signup(user: UserCreate, db: Session = Depends(database.get_db)):
                 "error": "An unexpected error occurred"
             }
         )
+
+@app.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "version": "1.0.0"
+    }
 
 if __name__ == "__main__":
     import uvicorn
