@@ -1,3 +1,4 @@
-from .users import Base, User
+from .user import User
+from ..database import Base
 
-__all__ = ["Base", "User"]
+__all__ = ['Base', 'User']

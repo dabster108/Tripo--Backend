@@ -12,20 +12,23 @@ from typing import Optional
 import re
 from dotenv import load_dotenv
 import os
+from .routers import auth
+from .config import settings
 
 # Load environment variables
 load_dotenv()
 
 # Initialize FastAPI app
-app = FastAPI()
-
-# Get allowed origins from environment variable
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+app = FastAPI(
+    title="Lanceraa API",
+    description="Backend API for Lanceraa freelancing platform",
+    version="1.0.0"
+)
 
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -150,6 +153,9 @@ async def health_check():
         "status": "healthy",
         "version": "1.0.0"
     }
+
+# Include routers
+app.include_router(auth.router)
 
 if __name__ == "__main__":
     import uvicorn
