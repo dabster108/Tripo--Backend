@@ -6,26 +6,30 @@ from pydantic import BaseModel, EmailStr, Field, validator
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from .models import Base, User
-from . import database
+from .core.config import settings
+from .core.database import Base, engine
+from .models import User
 from typing import Optional
 import re
 from dotenv import load_dotenv
 import os
-from .routers import auth
-from .config import settings
+from .routes import auth, health
+from .core.logging import logger
+from .core import database
 
 # Load environment variables
 load_dotenv()
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="Lanceraa API",
+    title=settings.APP_NAME,
     description="Backend API for Lanceraa freelancing platform",
     version="1.0.0"
 )
 
-# Configure CORS
+# Alternative solution for main.py
+origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8000").split(",")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
@@ -41,122 +45,30 @@ pwd_context = CryptContext(
     bcrypt__rounds=12  # You can adjust this value (10-14 is common)
 )
 
-# Create database tables
-Base.metadata.create_all(bind=database.engine)
+# Create database tables (comment out if using Alembic)
+Base.metadata.create_all(bind=engine)
 
-# Input validation model
-class UserCreate(BaseModel):
-    username: str = Field(
-        min_length=3, 
-        max_length=20, 
-        pattern="^[a-zA-Z0-9_-]+$"
-    )
-    fullName: str = Field(min_length=2, max_length=50)
-    email: EmailStr
-    phone: str = Field(
-        pattern=r"^\+?[1-9][0-9]{7,14}$"
-    )
-    password: str = Field(min_length=8)
+# Moving all schemas to proper files in the schemas directory
+# Removed the UserCreate and UserResponse models from here
 
-    @validator('password')
-    def validate_password(cls, v):
-        # Updated regex to require only one special character
-        if not re.match(r"^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$", v):
-            raise ValueError(
-                "Password must contain at least:"
-                "\n- 8 characters"
-                "\n- One letter"
-                "\n- One number"
-                "\n- One special character (@$!%*#?&)"
-            )
-        return v
+@app.get("/")
+async def root():
+    return {"message": "Welcome to Lanceraa API", "docs_url": "/docs"}
 
-# Response model
-class UserResponse(BaseModel):
-    message: str
-    error: Optional[str] = None
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "message": "User created successfully",
-                "error": None
-            }
-        }
+# Include routers with API prefix
+app.include_router(auth.router, prefix=settings.API_V1_STR)
+app.include_router(health.router, prefix=settings.API_V1_STR)
 
-@app.post("/api/auth/signup", 
-    response_model=UserResponse,
-    status_code=status.HTTP_201_CREATED)
-async def signup(user: UserCreate, db: Session = Depends(database.get_db)):
-    try:
-        # Check if username exists
-        if db.query(User).filter(User.username == user.username).first():
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={
-                    "message": "Registration failed",
-                    "error": "Username already taken"
-                }
-            )
+# Startup event
+@app.on_event("startup")
+async def startup_event():
+    logger.info("Starting Lanceraa API")
 
-        # Check if email exists
-        if db.query(User).filter(User.email == user.email).first():
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={
-                    "message": "Registration failed",
-                    "error": "Email already registered"
-                }
-            )
-        
-        # Check if phone exists
-        if db.query(User).filter(User.phone == user.phone).first():
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={
-                    "message": "Registration failed",
-                    "error": "Phone number already registered"
-                }
-            )
-
-        # Create new user
-        hashed_password = pwd_context.hash(user.password)
-        db_user = User(
-            username=user.username,
-            full_name=user.fullName,
-            email=user.email,
-            phone=user.phone,
-            hashed_password=hashed_password
-        )
-        
-        db.add(db_user)
-        db.commit()
-        
-        return {
-            "message": "User created successfully",
-            "error": None
-        }
-        
-    except Exception as e:
-        db.rollback()
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={
-                "message": "Registration failed",
-                "error": "An unexpected error occurred"
-            }
-        )
-
-@app.get("/health")
-async def health_check():
-    return {
-        "status": "healthy",
-        "version": "1.0.0"
-    }
-
-# Include routers
-app.include_router(auth.router)
+# Shutdown event
+@app.on_event("shutdown")
+async def shutdown_event():
+    logger.info("Shutting down Lanceraa API")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

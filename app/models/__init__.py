@@ -1,4 +1,3 @@
-from .user import User
-from ..database import Base
+from ..core.database import Base
+from .user import User, UserProfile
 
-__all__ = ['Base', 'User']
