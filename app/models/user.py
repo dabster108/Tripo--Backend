@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Boolean, ForeignKey, Text, JSON, DateTime, Integer, Float
+from sqlalchemy import Column, String, Boolean, ForeignKey, Text, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -18,19 +18,25 @@ class User(Base):
     phone = Column(String(20), unique=True, index=True, nullable=True)
     
     # Status flags
-    is_active = Column(Boolean, default=False)  # Becomes true after OTP verification
-    is_verified = Column(Boolean, default=False)  # For blue checkmark verification
-    profile_completed = Column(Boolean, default=False)  # Track if profile is complete
+    is_active = Column(Boolean, default=False)
+    is_verified = Column(Boolean, default=False)
+    profile_completed = Column(Boolean, default=False)
     
     # For email verification
     verification_code = Column(String(6), nullable=True)
     verification_code_expires = Column(DateTime, nullable=True)
     
+    # For password reset
+    reset_token = Column(String(64), nullable=True)
+    reset_token_expires = Column(DateTime, nullable=True)
+    
     # Timestamps
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
-    last_login = Column(DateTime, nullable=True)  # Add if missing
-
+    last_login = Column(DateTime, nullable=True)
+    
+    # Role management
+    role = Column(String(20), default='user')  # e.g., 'admin', 'user'
     
     # Relationship to profile
     profile = relationship("UserProfile", back_populates="user", uselist=False)
@@ -45,22 +51,12 @@ class UserProfile(Base):
     # Profile image
     profile_image = Column(String(255), nullable=True)
     
-    # Professional details
-    bio = Column(String(500), nullable=True)
-    skills = Column(String(500), nullable=True)  # Store as comma-separated values
-    
-    # Address
-    street = Column(String(100), nullable=True)
-    city = Column(String(50), nullable=True)
-    state = Column(String(50), nullable=True)
-    country = Column(String(50), nullable=True)
+    # Address information
+    street = Column(String(255), nullable=True)
+    city = Column(String(100), nullable=True)
+    state = Column(String(100), nullable=True)
+    country = Column(String(100), nullable=True)
     zip = Column(String(20), nullable=True)
-    
-    # Social links
-    website = Column(String(255), nullable=True)
-    linkedin = Column(String(255), nullable=True)
-    github = Column(String(255), nullable=True)
-    twitter = Column(String(255), nullable=True)
     
     # Timestamps
     created_at = Column(DateTime, server_default=func.now())

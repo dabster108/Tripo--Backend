@@ -23,6 +23,15 @@ from ..schemas.user import (
     EmailExists
 )
 
+from ..schemas.password import (
+    ForgotPasswordRequest, 
+    PasswordResetRequest, 
+    PasswordResetResponse,
+    PasswordResetVerify
+)
+import uuid
+# reset password added 
+
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"],
@@ -420,3 +429,86 @@ async def check_email_exists(data: EmailCheck, db: Session = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred: {str(e)}"
         )
+
+
+# forgot password 
+
+@router.post("/forgot-password", response_model=StepCompletionResponse)
+async def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """Request a password reset by providing the email address"""
+    user = db.query(User).filter(User.email == request.email).first()
+    
+    if not user:
+        # For security reasons, don't tell the client if the email exists or not
+        return StepCompletionResponse(
+            message="If your email is registered, you will receive a password reset link.",
+            success=True,
+            next_step="check_email",
+            user_id=None
+        )
+    
+    # Generate reset token
+    reset_token = str(uuid.uuid4())
+    user.reset_token = reset_token
+    user.reset_token_expires = datetime.utcnow() + timedelta(hours=24)
+    
+    db.commit()
+    
+    # In production, you would send an email with the reset link
+    # Here we just print it for development purposes
+    print("=" * 50)
+    print(f"PASSWORD RESET TOKEN for {user.email}: {reset_token}")
+    print(f"Reset link would be: https://tripo.com/reset-password?token={reset_token}")
+    print("=" * 50)
+    
+    return StepCompletionResponse(
+        message="Password reset instructions sent to your email.",
+        success=True,
+        next_step="check_email",
+        user_id=None
+    )
+
+@router.post("/verify-reset-token", response_model=PasswordResetResponse)
+async def verify_reset_token(request: PasswordResetVerify, db: Session = Depends(get_db)):
+    """Verify that a reset token is valid before showing the password reset form"""
+    user = db.query(User).filter(User.reset_token == request.token).first()
+    
+    if not user or user.reset_token_expires < datetime.utcnow():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token",
+            headers={"X-Error-Code": "INVALID_TOKEN"}
+        )
+    
+    return PasswordResetResponse(
+        message="Token is valid. You can now reset your password.",
+        success=True,
+        email=user.email
+    )
+
+@router.post("/reset-password", response_model=PasswordResetResponse)
+async def reset_password(request: PasswordResetRequest, db: Session = Depends(get_db)):
+    """Reset the password using the token received in email"""
+    user = db.query(User).filter(User.reset_token == request.token).first()
+    
+    if not user or user.reset_token_expires < datetime.utcnow():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token",
+            headers={"X-Error-Code": "INVALID_TOKEN"}
+        )
+    
+    # Update the password
+    user.hashed_password = get_password_hash(request.new_password)
+    
+    # Clear the reset token
+    user.reset_token = None
+    user.reset_token_expires = None
+    
+    db.commit()
+    
+    return PasswordResetResponse(
+        message="Password has been reset successfully. You can now log in with your new password.",
+        success=True,
+        email=user.email
+    )

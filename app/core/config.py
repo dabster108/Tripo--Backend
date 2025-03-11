@@ -6,7 +6,7 @@ load_dotenv()
 
 class Settings:
     # Basic settings
-    APP_NAME: str = "Lanceraa API"
+    APP_NAME: str = "Tripo API"
     API_V1_STR: str = "/api"
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-here")
     ALGORITHM: str = "HS256"
@@ -19,7 +19,7 @@ class Settings:
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     
     # Database settings
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./lanceraa.db")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
 
 # Create settings instance
 settings = Settings()
