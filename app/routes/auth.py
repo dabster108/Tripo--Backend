@@ -16,7 +16,6 @@ from ..schemas.user import (
     UserCreate, 
     InitialSignup, 
     VerifyEmail, 
-    BasicProfileInfo, 
     StepCompletionResponse,
     ResendVerification,
     EmailCheck,
@@ -150,81 +149,6 @@ async def verify_email(verification: VerifyEmail, db: Session = Depends(get_db))
         success=True,
         next_step="complete_profile",
         user_id=str(user.id)
-    )
-
-@router.post("/complete-basic-profile", response_model=StepCompletionResponse)
-async def complete_basic_profile(
-    profile: BasicProfileInfo,
-    user_id: str,
-    db: Session = Depends(get_db)
-):
-    """Third step: Complete basic profile info"""
-    user = db.query(User).filter(User.id == user_id).first()
-    
-    if not user or not user.is_verified:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User not found or not verified"
-        )
-    
-    # Check if username already exists
-    existing_user = db.query(User).filter(User.username == profile.username).first()
-    if existing_user and existing_user.id != user.id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already taken"
-        )
-    
-    # Update user info
-    user.username = profile.username
-    user.first_name = profile.firstName
-    user.last_name = profile.lastName
-    user.full_name = f"{profile.firstName} {profile.lastName}"
-    user.role = profile.role
-    user.completion_step = "contact_info"
-    
-    db.commit()
-    
-    return StepCompletionResponse(
-        message="Basic profile completed.",
-        success=True,
-        next_step="contact_info",
-        user_id=str(user.id)
-    )
-
-# Add similar endpoints for contact_info and professional_info
-
-@router.post("/complete-profile", response_model=UserResponse)
-async def complete_profile(
-    user_id: str,
-    db: Session = Depends(get_db)
-):
-    """Final step: Mark profile as completed"""
-    user = db.query(User).filter(User.id == user_id).first()
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-    
-    # Mark profile as completed
-    user.profile_completed = True
-    user.completion_step = "completed"
-    db.commit()
-    
-    return UserResponse(
-        message="Profile completed successfully.",
-        user=UserResponseData(
-            id=str(user.id),
-            username=user.username,
-            email=user.email,
-            full_name=user.full_name,
-            role=user.role,
-            is_verified=user.is_verified,
-            profile_completed=user.profile_completed,
-            completion_step=user.completion_step
-        )
     )
 
 @router.post("/login", response_model=LoginResponse)
