@@ -1,5 +1,5 @@
 '''
-lanceraa-backend/
+tripo-backend/
 ├── app/
 │   ├── __init__.py
 │   ├── main.py
