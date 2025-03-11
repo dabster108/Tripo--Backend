@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from ..core.database import get_db
 from ..core.security import get_current_user
 from ..models.user import User, UserProfile
-from ..schemas.profile import ProfileUpdate, ProfileResponse
+from ..schemas.profile import ProfileUpdate, ProfileResponse 
 from typing import Optional
 import os
 
