@@ -3,7 +3,7 @@
 
 ## Project Description
 
-Tripo-Backend is a FastAPI-based backend service for the Tripo freelancing platform. It provides various functionalities such as user authentication, email verification, password reset, and user profile management.
+Tripo-Backend is a FastAPI-based backend service for the Tripo platform. It provides various functionalities such as user authentication, email verification, password reset, and user profile management.
 
 ## Features
 
