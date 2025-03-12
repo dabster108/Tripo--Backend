@@ -1,16 +1,17 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr
+from typing import Optional
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
-    
-class PasswordResetVerify(BaseModel):
-    token: str
-    
-class PasswordResetRequest(BaseModel):
-    token: str
-    new_password: str = Field(..., min_length=8)
-    
-class PasswordResetResponse(BaseModel):
+
+class StepCompletionResponse(BaseModel):
     message: str
     success: bool
+    next_step: str
+    user_id: Optional[str] = None
+
+class ResetPasswordRequest(BaseModel):
     email: EmailStr
+    otp: str
+    new_password: str
+    confirm_password: str

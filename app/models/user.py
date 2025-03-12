@@ -27,8 +27,8 @@ class User(Base):
     verification_code_expires = Column(DateTime, nullable=True)
     
     # For password reset
-    reset_token = Column(String(64), nullable=True)
-    reset_token_expires = Column(DateTime, nullable=True)
+    reset_password_otp = Column(String(6), nullable=True)
+    reset_password_otp_expires = Column(DateTime, nullable=True)
     
     # Timestamps
     created_at = Column(DateTime, server_default=func.now())
