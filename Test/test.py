@@ -1,6 +1,5 @@
 import os
 import pytest
-from fastapi import FastAPI
 from httpx import AsyncClient
 from dotenv import load_dotenv
 
@@ -11,7 +10,7 @@ load_dotenv()
 from app.main import app
 
 # Fixture to initialize the FastAPI app
-@pytest.fixture
+@pytest.fixture(scope="function")
 async def client():
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
