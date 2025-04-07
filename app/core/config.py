@@ -21,8 +21,29 @@ class Settings:
     # Database settings
     DATABASE_URL: str = os.getenv("DATABASE_URL", "")
 
+    # Groq AI Settings
+    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY")
+    GROQ_MODEL: str = os.getenv("GROQ_MODEL", "llama3-8b-8192")  # Default model
+    GROQ_MAX_TOKENS: int = int(os.getenv("GROQ_MAX_TOKENS", "1024"))
+    GROQ_TEMPERATURE: float = float(os.getenv("GROQ_TEMPERATURE", "1.0"))
+
+    @property
+    def groq_config(self) -> dict:
+        """Returns Groq configuration as a dictionary"""
+        return {
+            "api_key": self.GROQ_API_KEY,
+            "model": self.GROQ_MODEL,
+            "max_tokens": self.GROQ_MAX_TOKENS,
+            "temperature": self.GROQ_TEMPERATURE
+        }
+
 # Create settings instance
 settings = Settings()
 
+# Validation checks
+if not settings.GROQ_API_KEY:
+    raise ValueError("GROQ_API_KEY is required in environment variables")
+
 print(f"ALLOWED_ORIGINS: {settings.ALLOWED_ORIGINS}")
 print(f"ENVIRONMENT: {settings.ENVIRONMENT}")
+print(f"Groq Model: {settings.GROQ_MODEL}")  # Added Groq config logging
