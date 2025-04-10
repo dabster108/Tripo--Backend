@@ -42,10 +42,10 @@ router = APIRouter(
     "/signup/initial", 
     response_model=StepCompletionResponse,
     status_code=status.HTTP_201_CREATED,
-    description="Step 1: Initial signup with email and password"
+    description="Step 1: Initial signup with email, name, and password"
 )
 async def initial_signup(user_data: InitialSignup, db: Session = Depends(get_db)):
-    """First step: Create an account with just email and password"""
+    """First step: Create an account with email, name, and password"""
     try:
         # Check if email already exists
         existing_user = db.query(User).filter(User.email == user_data.email).first()
@@ -68,11 +68,12 @@ async def initial_signup(user_data: InitialSignup, db: Session = Depends(get_db)
             username_count += 1
             username = f"{base_username}{username_count}"
             
-        # Create new user with minimal information
+        # Create new user with the provided information
         user = User(
             email=user_data.email,
             username=username,
-            first_name=username,  # Default first name from email username
+            first_name=user_data.first_name,
+            last_name=user_data.last_name,
             hashed_password=get_password_hash(user_data.password),
             is_active=False,  # Will be true after OTP verification
             is_verified=False,
@@ -107,7 +108,7 @@ async def initial_signup(user_data: InitialSignup, db: Session = Depends(get_db)
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred: {str(e)}"
         )
-
+    
 @router.post("/verify-email", response_model=StepCompletionResponse)
 async def verify_email(verification: VerifyEmail, db: Session = Depends(get_db)):
     """Verify user's email with OTP code"""
@@ -209,25 +210,26 @@ async def login(
         
         # Return user information based on your actual model
         return LoginResponse(
-            message="Login successful",
-            token=TokenData(
-                access_token=access_token,
-                token_type="bearer",
-                username=user.username
-            ),
-            user={
-                "id": str(user.id),
-                "username": user.username,
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "full_name": full_name,
-                "is_active": user.is_active,
-                "is_verified": user.is_verified,
-                "profile_completed": user.profile_completed,
-                "phone": user.phone
-            }
-        )
+    message="Login successful",
+    token=TokenData(
+        access_token=access_token,
+        token_type="bearer",
+        username=user.username
+    ),
+    user={
+        "id": str(user.id),
+        "username": user.username,
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "full_name": full_name,
+        "is_active": user.is_active,
+        "is_verified": user.is_verified,
+        "profile_completed": user.profile_completed,
+        "phone": user.phone
+        # REMOVED country from here since it's in UserProfile
+    }
+)
         
     except HTTPException as e:
         raise e

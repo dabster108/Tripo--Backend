@@ -119,30 +119,33 @@ This project is licensed under the MIT License. See the LICENSE file for details
 
 For any inquiries, please contact Dikshanta.
 
-tripo-backend/
-  └── app/
-      ├── __init__.py          → Package initializer
-      ├── main.py              → Entry point of the application
-      ├── config.py            → Configuration settings
-      ├── database.py          → Database connection and setup
-      │
-      ├── models/              → Database models
-      │   ├── __init__.py      → Package initializer for models
-      │   └── user.py          → User model definition
-      │
-      ├── schemas/             → Pydantic schemas for data validation
-      │   ├── __init__.py      → Package initializer for schemas
-      │   └── user.py          → User schema definition
-      │
-      ├── routers/             → API route definitions
-      │   ├── __init__.py      → Package initializer for routers
-      │   └── auth.py          → Authentication routes
-      │
-      ├── core/                → Core functionalities
-      │   ├── __init__.py      → Package initializer for core
-      │   ├── security.py      → Security utilities (e.g., token handling)
-      │   └── exceptions.py    → Custom exceptions
-      │
-      └── utils/               → Utility functions
-          ├── __init__.py      → Package initializer for utils
-          └── validators.py    → Input validators
+Tripo--Backend/
+├── app/
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── config.py         # App config (env vars)
+│   │   ├── database.py       # Postgres (Neon) connection
+│   │   ├── groq_integration.py # Groq AI integration
+│   │   ├── logging.py        # Logging setup
+│   │   └── security.py       # Auth/JWT utils
+│   ├── models/
+│   │   ├── __init__.py
+│   │   └── user.py           # User model (SQLAlchemy)
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   ├── auth.py           # Auth endpoints
+│   │   ├── health.py         # Health check
+│   │   └── profile.py        # Profile endpoints
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   ├── auth.py           # Auth Pydantic models
+│   │   ├── password.py       # Password schemas
+│   │   └── user.py           # User schemas
+│   ├── services/
+│   │   ├── __init__.py
+│   │   └── email_service.py  # Email logic
+│   └── utils/
+│       ├── chat_helper.py    # Chat utilities
+│       └── helpers.py        # Generic helpers
+├── main.py                   # FastAPI app entrypoint
+└── .env                      # Neon Postgres + secrets

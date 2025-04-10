@@ -18,7 +18,9 @@ class InitialSignup(BaseModel):
         min_length=8
     )
     confirm_password: str = Field(default="StrongP@ss123", min_length=8)
-
+    first_name: str = Field(..., min_length=2, max_length=50, description="User's first name")
+    last_name: str = Field(..., min_length=2, max_length=50, description="User's last name")
+    
     @validator('password')
     def validate_password(cls, v):
         if not re.match(r"^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$", v):
@@ -36,7 +38,7 @@ class InitialSignup(BaseModel):
         if 'password' in values and v != values['password']:
             raise ValueError('Passwords do not match')
         return v
-
+    
 class VerifyEmail(BaseModel):
     """Email verification with OTP"""
     user_id: str

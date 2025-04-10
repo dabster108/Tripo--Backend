@@ -1,47 +1,61 @@
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from ..core.config import settings
-from ..core.logging import logger
+from fastapi import BackgroundTasks
+from app.core.config import (
+    SMTP_HOST,
+    SMTP_PORT,
+    SMTP_USER,
+    SMTP_PASS,
+    EMAIL_FROM_NAME,
+    EMAIL_FROM_ADDRESS
+)
+from jinja2 import Environment, FileSystemLoader
+import os
+from pathlib import Path
 
-def send_verification_email(to_email: str, verification_code: str):
-    """
-    Send verification email with code
-    """
-    # For now just log the verification code
-    logger.info(f"VERIFICATION CODE for {to_email}: {verification_code}")
-    
-    # In production, implement actual email sending:
-    if not settings.SMTP_SERVER:
-        logger.warning("SMTP server not configured. Email not sent.")
-        return False
-    
-    try:
+# Configure Jinja2 for HTML email templates
+template_dir = Path(__file__).parent.parent / "templates" / "emails"
+env = Environment(loader=FileSystemLoader(template_dir))
+
+class EmailService:
+    @staticmethod
+    async def send_email(
+        to: str,
+        subject: str,
+        template_name: str,
+        template_context: dict = {},
+        background_tasks: BackgroundTasks = None
+    ):
+        """Send email synchronously or via background task."""
+        # Render HTML template
+        template = env.get_template(template_name)
+        html_content = template.render(**template_context)
+
+        # Create message
         msg = MIMEMultipart()
-        msg['From'] = settings.EMAIL_FROM
-        msg['To'] = to_email
-        msg['Subject'] = "Verify your Lanceraa account"
-        
-        body = f"""
-        <html>
-          <body>
-            <h2>Welcome to Lanceraa!</h2>
-            <p>Your verification code is: <strong>{verification_code}</strong></p>
-            <p>This code will expire in 30 minutes.</p>
-          </body>
-        </html>
-        """
-        
-        msg.attach(MIMEText(body, 'html'))
-        
-        server = smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT)
-        server.starttls()
-        server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-        server.send_message(msg)
-        server.quit()
-        
-        logger.info(f"Verification email sent to {to_email}")
-        return True
-    except Exception as e:
-        logger.error(f"Failed to send email: {str(e)}")
-        return False
+        msg["From"] = f"{EMAIL_FROM_NAME} <{EMAIL_FROM_ADDRESS}>"
+        msg["To"] = to
+        msg["Subject"] = subject
+        msg.attach(MIMEText(html_content, "html"))
+
+        # Send logic
+        def _send():
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+                server.starttls()
+                server.login(SMTP_USER, SMTP_PASS)
+                server.send_message(msg)
+
+        if background_tasks:
+            background_tasks.add_task(_send)
+        else:
+            _send()
+
+# Example usage:
+# await EmailService.send_email(
+#     to="user@example.com",
+#     subject="Verify Your Email",
+#     template_name="verification.html",
+#     template_context={"verification_url": "https://..."},
+#     background_tasks=background_tasks
+# )

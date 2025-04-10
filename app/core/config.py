@@ -44,6 +44,8 @@ settings = Settings()
 if not settings.GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY is required in environment variables")
 
+# Debug logging
 print(f"ALLOWED_ORIGINS: {settings.ALLOWED_ORIGINS}")
 print(f"ENVIRONMENT: {settings.ENVIRONMENT}")
-print(f"Groq Model: {settings.GROQ_MODEL}")  # Added Groq config logging
+print(f"Groq Model: {settings.GROQ_MODEL}")
+print(f"DATABASE_URL: {settings.DATABASE_URL}")  # Added database URL logging
