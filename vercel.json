@@ -10,5 +10,12 @@
       "src": "/(.*)",
       "dest": "app/main:app"
     }
-  ]
+  ],
+  "env": {
+    "SECRET_KEY": "@secret_key",
+    "DATABASE_URL": "@database_url",
+    "ENVIRONMENT": "@environment",
+    "ACCESS_TOKEN_EXPIRE_MINUTES": "@access_token_expire_minutes",
+    "ALLOWED_ORIGINS": "@allowed_origins"
+  }
 }
